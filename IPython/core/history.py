@@ -552,6 +552,9 @@ class HistoryManager(HistoryAccessor):
             self.save_thread = HistorySavingThread(self)
             self.save_thread.start()
 
+        from itertools import count
+        self.line_num = count()
+
     def _get_hist_file_name(self, profile=None):
         """Get default history file name based on the Shell's profile.
 
@@ -755,6 +758,8 @@ class HistoryManager(HistoryAccessor):
             If given, this is the raw input without any IPython transformations
             applied to it.  If not given, ``source`` is used.
         """
+        line_num = next(self.line_num)
+
         if source_raw is None:
             source_raw = source
         source = source.rstrip('\n')
