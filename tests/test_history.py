@@ -344,3 +344,14 @@ def test_get_tail_session_awareness(hmmax3):
                 hm2.db.close()
             if ha:
                 ha.db.close()
+
+
+def test_calling_run_cell():
+    import time
+    ip = get_ipython()
+    session_number = ip.history_manager.session_number
+    ip.run_cell(raw_cell="None", store_history=True)
+    while ip.history_manager.db_input_cache:
+        time.sleep(0)
+    new_session_number = ip.history_manager.session_number
+    assert session_number == new_session_number

@@ -3292,17 +3292,18 @@ class InteractiveShell(SingletonConfigurable):
         if silent:
             store_history = False
 
+        execution_count = result.execution_count = self.execution_count
+
         if store_history:
-            result.execution_count = self.execution_count
+            self.execution_count += 1
 
         def error_before_exec(value):
             if store_history:
                 if self.history_manager:
                     # Store formatted traceback and error details
                     self.history_manager.exceptions[
-                        self.execution_count
+                        execution_count
                     ] = self._format_exception_for_storage(value)
-                self.execution_count += 1
             result.error_before_exec = value
             self.last_execution_succeeded = False
             self.last_execution_result = result
@@ -3347,15 +3348,13 @@ class InteractiveShell(SingletonConfigurable):
         # Store raw and processed history
         if store_history:
             assert self.history_manager is not None
-            self.history_manager.store_inputs(self.execution_count, cell, raw_cell)
+            self.history_manager.store_inputs(execution_count, cell, raw_cell)
         if not silent:
             self.logger.log(cell, raw_cell)
 
         # Display the exception if input processing failed.
         if preprocessing_exc_tuple is not None:
             self.showtraceback(preprocessing_exc_tuple)
-            if store_history:
-                self.execution_count += 1
             return error_before_exec(preprocessing_exc_tuple[1])
 
         # Our own compiler remembers the __future__ environment. If we want to
@@ -3364,7 +3363,7 @@ class InteractiveShell(SingletonConfigurable):
         compiler = self.compile if shell_futures else self.compiler_class()
 
         with self.builtin_trap:
-            cell_name = compiler.cache(cell, self.execution_count, raw_code=raw_cell)
+            cell_name = compiler.cache(cell, execution_count, raw_code=raw_cell)
 
             with self.display_trap:
                 # Compile to bytecode
@@ -3411,16 +3410,12 @@ class InteractiveShell(SingletonConfigurable):
             assert self.history_manager is not None
             # Write output to the database. Does nothing unless
             # history output logging is enabled.
-            self.history_manager.store_output(self.execution_count)
-            exec_count = self.execution_count
+            self.history_manager.store_output(execution_count)
             if result.error_in_exec:
                 # Store formatted traceback and error details
                 self.history_manager.exceptions[
-                    exec_count
+                    execution_count
                 ] = self._format_exception_for_storage(result.error_in_exec)
-
-            # Each cell is a *single* input, regardless of how many lines it has
-            self.execution_count += 1
 
         return result
 
